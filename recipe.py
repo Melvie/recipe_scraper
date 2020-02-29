@@ -17,11 +17,13 @@ class Recipe():
 		name_json = {"recipe_name": self.name}
 		time_json = {"cook_time": self.time}
 		servings_json = {"servings": self.servings}
+		tags_json = {"tags": self.tags}
 		intro_json = {"recipe_intro": self.intro}
 		img_json = {"img_url": self.img_url}
 		instructions_json = {"recipe_instructions" : self.recipe_instructions}
 
-		return {**name_json, **intro_json, **img_json, **self.recipe_ingredients, **instructions_json}
+		return {**name_json, **intro_json, **img_json, **time_json, **servings_json,
+			    **self.recipe_ingredients, **instructions_json, **tags_json}
 
 	def scrape_recipe(self , soup):
 		pass
@@ -40,9 +42,9 @@ class NYTRecipe(Recipe):
 		self.ingredient = {}
 		self.img_url = " "
 		self.soup = soup
-		self.scrape_recipe()
-		self.time = " "
-		self.servings = " "
+		self.time = ""
+		self.servings = ""
+		self.tags=[]
 
 	def scrape_recipe(self):
 		self.scrape_name()
@@ -50,6 +52,8 @@ class NYTRecipe(Recipe):
 		self.scrape_instructions()
 		self.scrape_img()
 		self.scrape_ingredients()
+		self.scrape_yield()
+		self.scrape_tags()
 
 	def scrape_name(self):
 		try:
@@ -90,17 +94,26 @@ class NYTRecipe(Recipe):
 		else:
 			self.recipe_ingredients = {"Ingredients": self._ingredient_extractor(ingredient_lists[0])}
 
-	# TODO add tags and servings to scraping
-	def scrape_servings(self):
-		pass
+	def scrape_tags(self):
+		try:
+			self.tags = [tag.text for tag in self.soup.find('div', class_="tags-nutrition-container").find_all('a', class_='tag')]
+		except Exception as e:
+			self.tags = []
+			print(f"Failed to scrape tags: {e}")
 
-	def scrape_time(self):
+	def scrape_yield(self):
 		try:
 			time_serving_soup = self.soup.find("ul", class_="recipe-time-yield")
+			for thing in time_serving_soup.find_all('li'):
+				if thing.find('span', class_="recipe-yield-time-label recipe-time"):
+					self.time = thing.find('span', class_="recipe-yield-value").text.strip("\n")
+				elif thing.find('span', class_="recipe-yield-time-label recipe-yield"):
+					self.servings = thing.find('span', class_="recipe-yield-value").text.strip("\n")
+
 		except Exception as e:
 			print(f"Could not scrape time and servings.")
-			self.time = " "
-			self.servings = " "
+			self.time = "n/a"
+			self.servings = "n/a "
 
 	def _ingredient_extractor(self, ingredient_list):
 		recipe_dict = {}
