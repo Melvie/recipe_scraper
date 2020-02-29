@@ -1,0 +1,8 @@
+Recipes/
+.vscode/
+__pycache__/
+scarpe_nyt.py
+details.html.tera
+no_group_recipe.html
+recipe_page.html
+recipes_response.html
